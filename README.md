@@ -2,7 +2,7 @@
 
 Kalkulator sederhana untuk mahasiswa yang ingin tahu **IP minimal yang harus didapat tiap semester** supaya IPK tembus target, misalnya cumlaude.
 
-**Link demo:** https://Edwardukp.github.com/kejar-ipk/ 
+**Link demo:** https://Edwardukp.github.io/kejar-ipk/ 
 
 Masalah yang diselesaikan
 

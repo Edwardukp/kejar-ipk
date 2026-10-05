@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kejar IPK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+/* Layout: graph-paper page; a worksheet of two sheets (data KHS | hasil), then the path list and the IPK scale below */
+:root {
+  --paper: #EDF1F7;
+  --grid: rgba(43, 84, 160, 0.075);
+  --sheet: #FFFFFF;
+  --inset: #F4F6FB;
+  --field: #FBFCFE;
+  --ink: #172036;
+  --muted: #5A6681;
+  --line: #D4DBE7;
+  --accent: #2545C4;
+  --accent-soft: #E3E8FB;
+  --on-accent: #FFFFFF;
+  --marker: #FFE45C;
+  --shadow: 0 10px 30px -18px rgba(23, 32, 54, 0.35);
+
+  --ok: #1B7F52;   --ok-bg: #DCF2E6;
+  --warn: #9A5B00; --warn-bg: #FBEED3;
+  --hot: #B93D0B;  --hot-bg: #FDE4D5;
+  --bad: #B8233A;  --bad-bg: #FADDE2;
+
+  --z0: #E3E7EF; --z1: #CFD8EE; --z2: #A9BAE6; --z3: #7F97DD;
+
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1422; --grid: rgba(140, 170, 240, 0.06); --sheet: #161E31; --inset: #111829; --field: #111829;
+    --ink: #E5EAF5; --muted: #98A4BF; --line: #2A3550;
+    --accent: #8FA8FF; --accent-soft: #222E52; --on-accent: #0E1422;
+    --marker: rgba(255, 214, 64, 0.30); --shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+    --ok: #5CD39A; --ok-bg: #12301F; --warn: #F2B44C; --warn-bg: #36280F;
+    --hot: #FF955C; --hot-bg: #3A2114; --bad: #FF7D8B; --bad-bg: #3B1820;
+    --z0: #222B40; --z1: #2B3A63; --z2: #3A4F8C; --z3: #5570C2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1422; --grid: rgba(140, 170, 240, 0.06); --sheet: #161E31; --inset: #111829; --field: #111829;
+  --ink: #E5EAF5; --muted: #98A4BF; --line: #2A3550;
+  --accent: #8FA8FF; --accent-soft: #222E52; --on-accent: #0E1422;
+  --marker: rgba(255, 214, 64, 0.30); --shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  --ok: #5CD39A; --ok-bg: #12301F; --warn: #F2B44C; --warn-bg: #36280F;
+  --hot: #FF955C; --hot-bg: #3A2114; --bad: #FF7D8B; --bad-bg: #3B1820;
+  --z0: #222B40; --z1: #2B3A63; --z2: #3A4F8C; --z3: #5570C2;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.wrap { max-width: 1000px; margin: 0 auto; padding-block: 32px 56px; padding-inline: 20px; display: grid; gap: 20px; }
+
+header { display: grid; gap: 8px; padding-block: 4px 6px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0; }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.3rem, 6vw, 3.3rem); line-height: 1; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); max-width: 60ch; margin: 0; font-size: 16px; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+@media (max-width: 780px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 22px; min-width: 0; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 19px; line-height: 1.25; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 14px; margin: 4px 0 0; max-width: 62ch; }
+
+.pill { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); padding: 3px 8px; border-radius: 999px; }
+
+/* form */
+form { display: grid; gap: 16px; margin-top: 16px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.field { display: grid; gap: 5px; align-content: start; min-width: 0; }
+label { font-weight: 600; font-size: 13.5px; }
+.hint { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+input {
+  font-family: var(--f-mono); font-weight: 500; font-size: 18px; font-variant-numeric: tabular-nums;
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 8px;
+  background: var(--field); color: var(--ink);
+}
+input:focus { outline: 3px solid var(--accent-soft); border-color: var(--accent); }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.err { color: var(--bad); font-size: 12.5px; min-height: 0; }
+.err:empty { display: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-family: var(--f-mono); font-size: 12.5px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.chip:focus-visible, .path:focus-visible, .textbtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.textbtn { justify-self: start; background: none; border: 0; padding: 2px 0; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.textbtn:hover { color: var(--accent); }
+
+/* result */
+.result { box-shadow: var(--shadow); display: grid; gap: 16px; }
+.r-label { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.r-context { margin: 2px 0 0; font-size: 15px; }
+.big-row { display: flex; align-items: center; gap: 14px 22px; flex-wrap: wrap; }
+.big {
+  font-family: var(--f-display); font-weight: 800; font-size: clamp(4rem, 13vw, 6.4rem);
+  line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 0;
+}
+.big span {
+  background: linear-gradient(transparent 52%, var(--marker) 52%, var(--marker) 90%, transparent 90%);
+  padding-inline: 4px; margin-inline: -4px;
+}
+.stamp {
+  display: inline-flex; align-items: center; font-family: var(--f-mono); font-weight: 600; font-size: 12.5px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--st); background: var(--st-bg);
+  border: 2px solid var(--st); border-radius: 5px; padding: 5px 10px; transform: rotate(-3deg);
+}
+.s-done, .s-ok { --st: var(--ok); --st-bg: var(--ok-bg); }
+.s-warn { --st: var(--warn); --st-bg: var(--warn-bg); }
+.s-hot { --st: var(--hot); --st-bg: var(--hot-bg); }
+.s-bad { --st: var(--bad); --st-bg: var(--bad-bg); }
+.advice { margin: 0; max-width: 56ch; font-size: 15.5px; }
+.block { border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 6px; }
+.block-title { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.mix { margin: 0; }
+.mix b, .num { font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.calc { background: var(--inset); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.calc table { border-collapse: collapse; font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calc td { padding: 2px 0; }
+.calc td:first-child { color: var(--muted); padding-right: 14px; }
+.calc tr:last-child td { font-weight: 600; color: var(--ink); }
+.empty { color: var(--muted); }
+
+/* paths */
+.paths { display: grid; margin-top: 14px; border-top: 1px solid var(--line); }
+.path {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px 14px;
+  width: 100%; padding: 12px 10px; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; border-radius: 0;
+}
+.path:hover { background: var(--inset); }
+.path[aria-pressed="true"] { background: var(--accent-soft); }
+.radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center; }
+.path[aria-pressed="true"] .radio { border-color: var(--accent); }
+.path[aria-pressed="true"] .radio::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.p-name { font-weight: 500; }
+.p-name small { color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.p-val { font-family: var(--f-mono); font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
+.tag { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.04em; color: var(--st); background: var(--st-bg); padding: 3px 8px; border-radius: 999px; white-space: nowrap; justify-self: end; }
+@media (max-width: 520px) {
+  .path { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .path .tag { grid-column: 2 / 4; justify-self: start; }
+}
+
+/* scale */
+.pred { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.pred b { color: var(--ink); font-weight: 600; }
+.scale { position: relative; margin-top: 48px; height: 14px; }
+.track { position: absolute; inset: 0; border-radius: 7px; overflow: hidden; background: var(--z0); }
+.zone { position: absolute; top: 0; bottom: 0; }
+.band { position: absolute; top: -7px; height: 28px; border: 2px solid var(--accent); border-radius: 7px; min-width: 6px; transition: left .3s ease, width .3s ease; }
+.dot { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 3px solid var(--sheet); transform: translate(-50%, -50%); transition: left .3s ease; }
+.tline { position: absolute; top: -12px; height: 38px; width: 2px; background: var(--ink); transform: translateX(-1px); transition: left .3s ease; }
+.tlabel { position: absolute; bottom: calc(100% + 16px); font-family: var(--f-mono); font-size: 12px; font-weight: 600; white-space: nowrap; transition: left .3s ease; }
+.ticks { position: relative; height: 18px; margin-top: 16px; }
+.ticks span { position: absolute; font-family: var(--f-mono); font-size: 11px; color: var(--muted); transform: translateX(-50%); }
+.ticks span:first-child { transform: none; }
+.ticks span:last-child { transform: translateX(-100%); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 14px; font-size: 13px; }
+.legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 14px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+.sw-band { width: 18px; height: 12px; border: 2px solid var(--accent); border-radius: 4px; }
+.sw-line { width: 2px; height: 14px; background: var(--ink); border-radius: 0; }
+.legend.zones { color: var(--muted); }
+
+footer { color: var(--muted); font-size: 12.5px; max-width: 75ch; display: grid; gap: 6px; }
+footer p { margin: 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .band, .dot, .tline, .tlabel { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Kalkulator IPK mahasiswa</p>
+    <h1>Kejar IPK</h1>
+    <p class="lead">Masukkan IPK dan SKS dari KHS terakhirmu. Kejar IPK menghitung IP minimal yang harus kamu dapat tiap semester supaya IPK-mu tembus target, misalnya cumlaude.</p>
+  </header>
+
+  <div class="cols">
+    <section class="sheet" aria-labelledby="form-title">
+      <div class="sheet-head">
+        <h2 id="form-title">Data dari KHS-mu</h2>
+        <span class="pill" id="example-pill">Angka contoh</span>
+      </div>
+      <form id="form" novalidate>
+        <div class="pair">
+          <div class="field">
+            <label for="ipk">IPK sekarang</label>
+            <input id="ipk" inputmode="decimal" autocomplete="off" aria-describedby="ipk-err">
+            <span class="err" id="ipk-err"></span>
+          </div>
+          <div class="field">
+            <label for="sks">SKS yang sudah lulus</label>
+            <input id="sks" inputmode="numeric" autocomplete="off" aria-describedby="sks-err">
+            <span class="err" id="sks-err"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="target">Target IPK</label>
+          <input id="target" inputmode="decimal" autocomplete="off" aria-describedby="target-err">
+          <div class="chips" role="group" aria-label="Pilih target cepat">
+            <button type="button" class="chip" data-v="3,01">3,01 Sangat memuaskan</button>
+            <button type="button" class="chip" data-v="3,51">3,51 Cumlaude</button>
+            <button type="button" class="chip" data-v="3,75">3,75</button>
+          </div>
+          <span class="err" id="target-err"></span>
+        </div>
+
+        <div class="pair">
+          <div class="field">
+            <label for="per">SKS per semester</label>
+            <input id="per" inputmode="numeric" autocomplete="off" aria-describedby="per-hint per-err">
+            <span class="hint" id="per-hint">Rencana SKS yang diambil, biasanya 18–24</span>
+            <span class="err" id="per-err"></span>
+          </div>
+          <div class="field">
+            <label for="sisa">Sisa semester</label>
+            <input id="sisa" inputmode="numeric" autocomplete="off" aria-describedby="sisa-hint sisa-err">
+            <span class="hint" id="sisa-hint">Sampai kamu lulus</span>
+            <span class="err" id="sisa-err"></span>
+          </div>
+        </div>
+
+        <button type="button" class="textbtn" id="reset">Kembalikan angka contoh</button>
+      </form>
+    </section>
+
+    <section class="sheet result" id="result" aria-labelledby="r-label">
+      <div>
+        <p class="r-label" id="r-label">IP minimal yang kamu butuhkan</p>
+        <p class="r-context" id="r-context"></p>
+      </div>
+      <div class="big-row">
+        <p class="big"><span id="big">–</span></p>
+        <span class="stamp" id="stamp" hidden></span>
+      </div>
+      <p class="advice" id="advice"></p>
+      <div class="block" id="mix-block">
+        <p class="block-title" id="mix-title">Contoh nilai per semester</p>
+        <p class="mix" id="mix"></p>
+      </div>
+      <div class="block" id="calc-block">
+        <p class="block-title">Cara hitung</p>
+        <div class="calc"><table><tbody id="calc"></tbody></table></div>
+      </div>
+      <p class="sr" aria-live="polite" id="live"></p>
+    </section>
+  </div>
+
+  <section class="sheet" aria-labelledby="paths-title">
+    <h2 id="paths-title">Kapan target harus tercapai?</h2>
+    <p class="sub">Pilih jalurnya. Makin cepat targetnya, makin tinggi IP yang dibutuhkan tiap semester.</p>
+    <div class="paths" id="paths" role="group" aria-labelledby="paths-title"></div>
+  </section>
+
+  <section class="sheet" aria-labelledby="scale-title">
+    <h2 id="scale-title">Posisi IPK-mu</h2>
+    <p class="pred" id="pred"></p>
+    <div class="scale" id="scale" aria-hidden="true">
+      <div class="track">
+        <div class="zone" style="left:38%;width:12.5%;background:var(--z1)"></div>
+        <div class="zone" style="left:50.5%;width:25%;background:var(--z2)"></div>
+        <div class="zone" style="left:75.5%;width:24.5%;background:var(--z3)"></div>
+      </div>
+      <div class="band" id="band"></div>
+      <div class="dot" id="dot"></div>
+      <div class="tline" id="tline"></div>
+      <div class="tlabel" id="tlabel"></div>
+    </div>
+    <div class="ticks" aria-hidden="true">
+      <span style="left:0">2,00</span>
+      <span style="left:38%">2,76</span>
+      <span style="left:50.5%">3,01</span>
+      <span style="left:75.5%">3,51</span>
+      <span style="left:100%">4,00</span>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="legend zones">
+      <span><i class="sw" style="background:var(--z1)"></i>Memuaskan 2,76–3,00</span>
+      <span><i class="sw" style="background:var(--z2)"></i>Sangat memuaskan 3,01–3,50</span>
+      <span><i class="sw" style="background:var(--z3)"></i>Pujian (cumlaude) 3,51–4,00</span>
+    </div>
+  </section>
+
+  <footer>
+    <p>Bobot nilai yang dipakai: A 4,00 · AB/B+ 3,50 · B 3,00 · BC/C+ 2,50 · C 2,00 · D 1,00 · E 0,00. Skala nilai dan batas predikat bisa sedikit berbeda di tiap kampus, jadi cek buku pedoman akademikmu. Beberapa kampus juga mensyaratkan lulus tepat waktu dan tanpa nilai D/E untuk predikat cumlaude.</p>
+    <p>Angka yang kamu isi hanya tersimpan di browser ini.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "kejar-ipk-v1";
+  var DEFAULTS = { ipk: "3,21", sks: "80", target: "3,51", per: "20", sisa: "4" };
+  var FIELDS = {
+    ipk: { min: 0, max: 4, int: false, msg: "Isi IPK antara 0,00 dan 4,00." },
+    sks: { min: 0, max: 250, int: true, msg: "Isi total SKS dalam angka bulat, misalnya 80." },
+    target: { min: 0.01, max: 4, int: false, msg: "Target IPK harus antara 0,01 dan 4,00." },
+    per: { min: 1, max: 30, int: true, msg: "Isi angka bulat 1–30." },
+    sisa: { min: 1, max: 14, int: true, msg: "Isi angka bulat 1–14." }
+  };
+  var GRADES = [
+    { n: "A", v: 4 }, { n: "AB/B+", v: 3.5 }, { n: "B", v: 3 }, { n: "BC/C+", v: 2.5 },
+    { n: "C", v: 2 }, { n: "D", v: 1 }, { n: "E", v: 0 }
+  ];
+  var state = { k: null, follow: true, example: true };
+
+  function parseNum(s) {
+    s = String(s == null ? "" : s).trim().replace(/\s/g, "").replace(",", ".");
+    if (!/^(\d+\.?\d*|\.\d+)$/.test(s)) return NaN;
+    return parseFloat(s);
+  }
+  function ceil2(v) { return Math.ceil(v * 100 - 1e-7) / 100; }
+  function floor2(v) { return Math.floor(v * 100 + 1e-7) / 100; }
+  function fmt(v) { return v.toFixed(2).replace(".", ","); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function need(v, k) { var tot = v.sks + k * v.per; return (v.target * tot - v.ipk * v.sks) / (k * v.per); }
+  function maxAt(v, k) { var tot = v.sks + k * v.per; return (v.ipk * v.sks + 4 * k * v.per) / tot; }
+  function statusOf(r) {
+    if (r <= 0) return { c: "done", t: "Sudah aman" };
+    if (r <= 3.5) return { c: "ok", t: "Realistis" };
+    if (r <= 3.85) return { c: "warn", t: "Kerja keras" };
+    if (r <= 4) return { c: "hot", t: "Hampir sempurna" };
+    return { c: "bad", t: "Tidak terkejar" };
+  }
+  function pred(v) {
+    if (v > 3.5) return "Pujian (cumlaude)";
+    if (v > 3) return "Sangat memuaskan";
+    if (v >= 2.76) return "Memuaskan";
+    return "belum masuk predikat";
+  }
+  function mix(r, s) {
+    if (r <= 0 || r > 4) return null;
+    for (var i = 0; i < GRADES.length - 1; i++) {
+      var hi = GRADES[i], lo = GRADES[i + 1];
+      if (r <= hi.v + 1e-9 && r >= lo.v - 1e-9) {
+        var nHi = Math.min(s, Math.max(0, Math.ceil((r - lo.v) / (hi.v - lo.v) * s - 1e-9)));
+        var nLo = s - nHi;
+        var ip = (nHi * hi.v + nLo * lo.v) / s;
+        return { hi: hi.n, lo: lo.n, nHi: nHi, nLo: nLo, ip: ip };
+      }
+    }
+    return null;
+  }
+
+  function setErr(key, msg) {
+    $(key + "-err").textContent = msg;
+    $(key).setAttribute("aria-invalid", msg ? "true" : "false");
+  }
+  function readAll() {
+    var v = {}, ok = true;
+    Object.keys(FIELDS).forEach(function (key) {
+      var raw = $(key).value, n = parseNum(raw), f = FIELDS[key];
+      var valid = !isNaN(n) && n >= f.min && n <= f.max && (!f.int || Number.isInteger(n));
+      setErr(key, valid ? "" : (raw.trim() === "" ? "Wajib diisi." : f.msg));
+      if (!valid) ok = false;
+      v[key] = n;
+    });
+    return ok ? v : null;
+  }
+
+  function save() {
+    try {
+      var vals = {};
+      Object.keys(FIELDS).forEach(function (k) { vals[k] = $(k).value; });
+      localStorage.setItem(KEY, JSON.stringify({ vals: vals, k: state.k, follow: state.follow, example: state.example }));
+    } catch (e) {}
+  }
+  function load() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+    var vals = (d && d.vals) || DEFAULTS;
+    Object.keys(FIELDS).forEach(function (k) { $(k).value = vals[k] != null ? vals[k] : DEFAULTS[k]; });
+    if (d) { state.k = d.k; state.follow = d.follow !== false; state.example = !!d.example; }
+  }
+
+  function horizonText(k, sisa) {
+    var t = k === 1 ? "di semester depan" : "dalam " + k + " semester";
+    return t + (k === sisa ? " (saat lulus)" : "");
+  }
+
+  function renderPaths(v) {
+    var box = $("paths");
+    var focusedK = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
+    var html = "";
+    for (var k = 1; k <= v.sisa; k++) {
+      var r = ceil2(need(v, k)), st = statusOf(r);
+      var name = (k === 1 ? "Semester depan" : k + " semester lagi") + (k === v.sisa ? " <small>· saat lulus</small>" : "");
+      var val = r <= 0 ? "bebas" : fmt(r);
+      html += '<button type="button" class="path s-' + st.c + '" data-k="' + k + '" aria-pressed="' + (k === state.k) + '">' +
+        '<span class="radio" aria-hidden="true"></span>' +
+        '<span class="p-name">' + name + '</span>' +
+        '<span class="p-val">' + val + '</span>' +
+        '<span class="tag">' + st.t + '</span></button>';
+    }
+    box.innerHTML = html;
+    if (focusedK) { var b = box.querySelector('[data-k="' + focusedK + '"]'); if (b) b.focus(); }
+  }
+
+  function pos(x) { return Math.min(1, Math.max(0, (x - 2) / 2)) * 100; }
+
+  function render() {
+    $("example-pill").hidden = !state.example;
+    var tv = parseNum($("target").value);
+    document.querySelectorAll(".chip").forEach(function (c) {
+      c.setAttribute("aria-pressed", String(!isNaN(tv) && Math.abs(parseNum(c.dataset.v) - tv) < 1e-9));
+    });
+
+    var v = readAll();
+    var result = $("result");
+    if (!v) {
+      $("r-context").innerHTML = '<span class="empty">Lengkapi data KHS-mu untuk melihat hasil.</span>';
+      $("big").textContent = "–";
+      $("stamp").hidden = true;
+      $("advice").textContent = "";
+      $("mix-block").hidden = true;
+      $("calc-block").hidden = true;
+      $("paths").innerHTML = "";
+      $("pred").textContent = "";
+      $("legend").innerHTML = "";
+      return;
+    }
+    $("calc-block").hidden = false;
+
+    if (state.follow || state.k == null || state.k > v.sisa || state.k < 1) { state.k = v.sisa; state.follow = true; }
+    var k = state.k;
+    var raw = need(v, k), r = ceil2(raw), st = statusOf(r);
+    var T = fmt(v.target), I = fmt(v.ipk);
+    var maxK = floor2(maxAt(v, k));
+
+    $("r-context").innerHTML = "per semester, agar IPK tembus <b class=\"num\">" + T + "</b> " + horizonText(k, v.sisa);
+    $("big").textContent = r <= 0 ? "0,00" : fmt(r);
+    var stamp = $("stamp");
+    stamp.hidden = false;
+    stamp.className = "stamp s-" + st.c;
+    stamp.textContent = st.t;
+
+    var rT = '<b class="num">' + fmt(r) + "</b>";
+    var advice = "";
+    if (st.c === "done") {
+      advice = "Target ini sudah aman. IPK-mu tetap " + T + " atau lebih berapa pun IP yang kamu dapat " + (k === 1 ? "semester depan." : "dalam " + k + " semester ke depan.");
+    } else if (st.c === "ok") {
+      advice = "Target ini masuk akal. " + (k === 1 ? "Dapatkan IP minimal " + rT + " semester depan" : "Jaga IP rata-rata minimal " + rT + " per semester selama " + k + " semester") + " dan IPK-mu tembus " + T + ".";
+    } else if (st.c === "warn") {
+      advice = "Bisa dicapai, tapi sebagian besar mata kuliah harus dapat A. Prioritaskan mata kuliah dengan SKS besar, karena pengaruhnya ke IPK paling besar.";
+    } else if (st.c === "hot") {
+      advice = "Bisa, tapi hampir semua mata kuliah harus dapat A. Ruang untuk nilai di bawah A sangat sempit.";
+      if (k < v.sisa && v.target > v.ipk) advice += " Kalau targetnya digeser lebih lambat, IP yang dibutuhkan turun.";
+    } else {
+      advice = "Meski semua nilai A, IPK tertinggi yang bisa kamu capai " + (k === 1 ? "setelah semester depan" : "dalam " + k + " semester") + " adalah " + fmt(maxK) + ".";
+      var kMin = null;
+      for (var j = k + 1; j <= v.sisa; j++) { if (ceil2(need(v, j)) <= 4) { kMin = j; break; } }
+      if (kMin) advice += " Target ini baru terkejar kalau dicicil dalam " + kMin + " semester. Pilih jalur itu di bawah.";
+      else advice += " Sampai lulus pun target ini tidak terkejar. Coba target " + fmt(floor2(maxAt(v, v.sisa))) + " atau lebih rendah.";
+    }
+    $("advice").innerHTML = advice;
+
+    var m = mix(r, v.per);
+    if (m) {
+      $("mix-block").hidden = false;
+      $("mix-title").textContent = "Contoh nilai per semester (" + v.per + " SKS)";
+      var mixText = m.nLo === 0
+        ? "Semua <b>" + m.nHi + " SKS</b> dapat nilai <b>" + m.hi + "</b>"
+        : (m.nHi === 0 ? "Semua <b>" + m.nLo + " SKS</b> dapat nilai <b>" + m.lo + "</b>"
+          : "<b>" + m.nHi + " SKS</b> nilai <b>" + m.hi + "</b> + <b>" + m.nLo + " SKS</b> nilai <b>" + m.lo + "</b>");
+      $("mix").innerHTML = mixText + " → IP <b>" + fmt(floor2(m.ip)) + "</b>";
+    } else {
+      $("mix-block").hidden = true;
+    }
+
+    var tot = v.sks + k * v.per;
+    var mNow = v.ipk * v.sks, mTarget = v.target * tot;
+    $("calc").innerHTML =
+      "<tr><td>Mutu sekarang</td><td>" + I + " × " + v.sks + " = " + fmt(mNow) + "</td></tr>" +
+      "<tr><td>Mutu target</td><td>" + T + " × (" + v.sks + " + " + k + " × " + v.per + ") = " + fmt(mTarget) + "</td></tr>" +
+      "<tr><td>IP minimal</td><td>(" + fmt(mTarget) + " − " + fmt(mNow) + ") ÷ " + (k * v.per) + " = " + fmt(r) + "</td></tr>";
+
+    $("live").textContent = "IP minimal " + fmt(Math.max(0, r)) + " per semester " + horizonText(k, v.sisa) + ". Status: " + st.t + ".";
+
+    renderPaths(v);
+
+    $("pred").innerHTML = "Predikat sekarang: <b>" + pred(v.ipk) + "</b> · Predikat target: <b>" + pred(v.target) + "</b>";
+    var pI = pos(v.ipk), pM = pos(maxK), pT = pos(v.target);
+    $("band").style.left = pI + "%";
+    $("band").style.width = Math.max(0, pM - pI) + "%";
+    $("dot").style.left = pI + "%";
+    $("tline").style.left = pT + "%";
+    var tl = $("tlabel");
+    tl.textContent = "Target " + T;
+    tl.style.left = pT + "%";
+    tl.style.transform = pT < 12 ? "translateX(0)" : (pT > 88 ? "translateX(-100%)" : "translateX(-50%)");
+    $("legend").innerHTML =
+      '<span><i class="sw sw-dot"></i>IPK sekarang ' + I + "</span>" +
+      '<span><i class="sw sw-band"></i>Bisa kamu capai ' + (k === 1 ? "semester depan" : "dalam " + k + " semester") + ": sampai " + fmt(maxK) + "</span>" +
+      '<span><i class="sw sw-line"></i>Target ' + T + "</span>";
+
+    save();
+  }
+
+  load();
+
+  Object.keys(FIELDS).forEach(function (key) {
+    var el = $(key);
+    el.addEventListener("input", function () { state.example = false; render(); });
+    el.addEventListener("focus", function () { try { el.select(); } catch (e) {} });
+  });
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); });
+  document.querySelectorAll(".chip").forEach(function (c) {
+    c.addEventListener("click", function () { $("target").value = c.dataset.v; state.example = false; render(); });
+  });
+  $("paths").addEventListener("click", function (e) {
+    var b = e.target.closest(".path");
+    if (!b) return;
+    var k = parseInt(b.dataset.k, 10);
+    state.k = k;
+    var sisa = parseNum($("sisa").value);
+    state.follow = k === sisa;
+    render();
+  });
+  $("reset").addEventListener("click", function () {
+    Object.keys(DEFAULTS).forEach(function (k) { $(k).value = DEFAULTS[k]; });
+    state.follow = true; state.k = null; state.example = true;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
